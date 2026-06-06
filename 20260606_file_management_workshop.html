@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>次世代ファイル管理戦略 ─ ローカル・クラウド・AIの統合 | 勉強会資料</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f5;
+  --surface:#ffffff;
+  --accent:#cc785c;
+  --accent-soft:#f4e6e0;
+  --accent-deep:#a8573d;
+  --text:#1a1a1a;
+  --muted:#6b6760;
+  --border:#e6e2d8;
+  --border-strong:#d6d1c4;
+  --code-bg:#f3f1ea;
+  --good:#3f7a55;
+  --good-soft:#e6f0e9;
+  --bad:#b45348;
+  --bad-soft:#f7e8e5;
+  --serif:"Noto Serif JP",serif;
+  --sans:"Inter","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --mono:"SF Mono",Menlo,Consolas,"Noto Sans Mono CJK JP",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* ============ LAYOUT ============ */
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);gap:0;max-width:1240px;margin:0 auto}
+.sidenav{position:sticky;top:0;align-self:start;height:100vh;padding:40px 24px 40px 32px;border-right:1px solid var(--border);overflow-y:auto}
+.main{min-width:0;padding:56px 56px 96px;max-width:900px}
+
+/* ============ SIDENAV ============ */
+.nav-brand{font-family:var(--serif);font-weight:700;font-size:18px;line-height:1.4;margin-bottom:4px}
+.nav-sub{font-size:13px;color:var(--muted);margin-bottom:28px;letter-spacing:.01em}
+.nav-label{font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;margin:0 0 12px}
+.nav-list{list-style:none}
+.nav-list li{margin:2px 0}
+.nav-list a{display:block;text-decoration:none;color:var(--muted);font-size:14px;line-height:1.5;padding:7px 12px;border-radius:8px;border-left:2px solid transparent;transition:all .15s}
+.nav-list a:hover{color:var(--text);background:var(--accent-soft)}
+.nav-list a.active{color:var(--accent-deep);background:var(--accent-soft);border-left-color:var(--accent);font-weight:600}
+.nav-list .sub{padding-left:24px;font-size:13px}
+
+/* ============ MOBILE NAV ============ */
+.mobile-bar{display:none}
+
+/* ============ HEADER ============ */
+.doc-head{margin-bottom:44px}
+.eyebrow{display:inline-block;font-size:13px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-deep);font-weight:600;margin-bottom:16px}
+h1{font-family:var(--serif);font-weight:700;font-size:34px;line-height:1.35;letter-spacing:.01em;margin-bottom:18px}
+.lede{font-size:16px;color:var(--muted);line-height:1.8;max-width:60ch}
+.meta-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.meta-chip{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px}
+.meta-chip strong{color:var(--text);font-weight:600}
+
+/* ============ TLDR CARDS ============ */
+.tldr{margin-bottom:52px}
+.tldr-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:18px}
+.tldr-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 22px 20px;position:relative}
+.tldr-card .num{font-family:var(--serif);font-weight:700;font-size:15px;color:var(--accent);background:var(--accent-soft);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.tldr-card h3{font-family:var(--serif);font-weight:600;font-size:17px;line-height:1.5;margin-bottom:8px}
+.tldr-card p{font-size:14px;color:var(--muted);line-height:1.7}
+
+/* ============ SECTIONS ============ */
+.section{scroll-margin-top:24px;margin-bottom:8px;border-top:1px solid var(--border)}
+.section:first-of-type{border-top:none}
+.sec-head{width:100%;display:flex;align-items:center;gap:16px;padding:26px 0;background:none;border:none;cursor:pointer;text-align:left;font-family:var(--sans)}
+.sec-head .idx{font-family:var(--serif);font-weight:700;font-size:15px;color:var(--accent);border:1px solid var(--accent);border-radius:8px;min-width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-head h2{font-family:var(--serif);font-weight:600;font-size:23px;line-height:1.4;flex:1}
+.sec-head .chev{color:var(--muted);transition:transform .25s;flex-shrink:0}
+.section.open .sec-head .chev{transform:rotate(180deg)}
+.sec-body{display:none;padding-bottom:40px}
+.section.open .sec-body{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+.sec-body h3{font-family:var(--serif);font-weight:600;font-size:18px;line-height:1.5;margin:32px 0 12px}
+.sec-body h3:first-child{margin-top:0}
+.sec-body p{font-size:16px;line-height:1.8;margin-bottom:16px}
+.sec-body p.muted{font-size:14px;color:var(--muted)}
+.sec-body strong{font-weight:600}
+.label{font-size:13px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-deep);font-weight:600;display:block;margin-bottom:10px}
+
+/* ============ BADGES ============ */
+.badge{display:inline-block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:6px;vertical-align:middle;margin-left:6px}
+.badge.new{background:var(--accent);color:#fff}
+.badge.ga{background:var(--good-soft);color:var(--good);border:1px solid var(--good)}
+.badge.todo{background:var(--accent-soft);color:var(--accent-deep)}
+
+/* ============ TABLES ============ */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin:20px 0}
+.data-table{width:100%;border-collapse:collapse;font-size:15px;min-width:560px}
+.data-table th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;font-weight:600;color:var(--muted);text-align:left;padding:13px 16px;background:var(--code-bg);border-bottom:1px solid var(--border-strong);white-space:nowrap}
+.data-table td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.65}
+.data-table tr:last-child td{border-bottom:none}
+.data-table td:first-child{font-weight:600}
+.cell-good{color:var(--good);font-weight:600}
+.cell-bad{color:var(--bad);font-weight:600}
+.mono{font-family:var(--mono);font-size:.92em;background:var(--code-bg);padding:1px 6px;border-radius:5px}
+
+/* ============ CALLOUT ============ */
+.callout{border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 10px 10px 0;padding:18px 22px;margin:22px 0}
+.callout .label{margin-bottom:6px}
+.callout p{font-size:15px;margin-bottom:0;color:var(--text)}
+.callout.warn{border-left-color:var(--bad)}
+.callout.warn .label{color:var(--bad)}
+
+/* ============ GOOD/BAD SPLIT ============ */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split-card{border:1px solid var(--border);border-radius:10px;padding:18px 20px;background:var(--surface)}
+.split-card.do{border-color:#cde0d3}
+.split-card.dont{border-color:#ecd2cd}
+.split-card .label{font-size:13px;margin-bottom:12px}
+.split-card.do .label{color:var(--good)}
+.split-card.dont .label{color:var(--bad)}
+.split-card ul{list-style:none}
+.split-card li{font-size:15px;line-height:1.7;padding-left:22px;position:relative;margin-bottom:8px}
+.split-card li:last-child{margin-bottom:0}
+.split-card.do li::before{content:"✓";position:absolute;left:0;color:var(--good);font-weight:700}
+.split-card.dont li::before{content:"✕";position:absolute;left:0;color:var(--bad);font-weight:700}
+
+/* ============ FIGURE ============ */
+.figure{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:24px 0}
+.figure svg{display:block;width:100%;height:auto}
+.fig-cap{font-size:13px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6}
+.svg-num{font-family:var(--serif);font-weight:700}
+.svg-txt{font-family:var(--sans);font-weight:500}
+
+/* ============ OPERATOR CARDS ============ */
+.op-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+.op-card{border:1px solid var(--border);border-radius:10px;padding:16px 18px;background:var(--surface)}
+.op-card code{font-family:var(--mono);font-size:14px;color:var(--accent-deep);background:var(--accent-soft);padding:3px 9px;border-radius:6px;font-weight:600}
+.op-card p{font-size:14px;color:var(--muted);margin:10px 0 0;line-height:1.65}
+
+/* ============ FLOW STEPS ============ */
+.steps{counter-reset:s;margin:20px 0}
+.step{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step .dot{counter-increment:s;flex-shrink:0;width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);font-family:var(--serif);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center}
+.step .dot::before{content:counter(s)}
+.step-body h4{font-family:var(--serif);font-weight:600;font-size:16px;margin-bottom:4px}
+.step-body p{font-size:15px;color:var(--muted);margin:0;line-height:1.7}
+
+/* ============ DECISION LIST ============ */
+.decisions{list-style:none;margin:18px 0}
+.decisions li{font-size:15px;line-height:1.7;padding:12px 0 12px 28px;border-bottom:1px solid var(--border);position:relative}
+.decisions li:last-child{border-bottom:none}
+.decisions li::before{content:"";position:absolute;left:6px;top:20px;width:7px;height:7px;border-radius:2px;background:var(--accent)}
+
+/* ============ REFERENCES ============ */
+details.refs{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-top:20px}
+details.refs summary{cursor:pointer;padding:18px 22px;font-family:var(--serif);font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.refs summary::-webkit-details-marker{display:none}
+details.refs summary .chev{color:var(--muted);transition:transform .2s}
+details.refs[open] summary .chev{transform:rotate(180deg)}
+.ref-list{padding:0 22px 20px;margin:0;list-style:none;counter-reset:r}
+.ref-list li{counter-increment:r;font-size:13px;color:var(--muted);line-height:1.7;padding:8px 0 8px 30px;border-top:1px solid var(--border);position:relative;word-break:break-all}
+.ref-list li::before{content:counter(r);position:absolute;left:0;top:8px;font-family:var(--serif);font-weight:700;color:var(--accent);font-size:12px}
+.ref-list a{color:var(--accent-deep);text-decoration:none}
+.ref-list a:hover{text-decoration:underline}
+
+/* ============ FOOTER ============ */
+.foot{margin-top:64px;padding-top:28px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);line-height:1.7}
+.foot strong{color:var(--text);font-family:var(--serif)}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .sidenav{display:none}
+  .main{padding:28px 20px 72px;max-width:none}
+  .mobile-bar{display:block;position:sticky;top:0;z-index:20;background:rgba(250,249,245,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:14px 20px}
+  .mobile-bar select{width:100%;font-family:var(--sans);font-size:14px;padding:10px 12px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--text)}
+  .tldr-grid{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr}
+  .op-grid{grid-template-columns:1fr}
+  h1{font-size:27px}
+  .sec-head h2{font-size:20px}
+}
+
+/* ============ PRINT ============ */
+@media print{
+  .sidenav,.mobile-bar,.sec-head .chev{display:none!important}
+  .shell{grid-template-columns:1fr;max-width:none}
+  .main{padding:0;max-width:none}
+  .section.open .sec-body,.sec-body{display:block!important}
+  details.refs{border:none}
+  .ref-list{display:block!important}
+  details.refs[open] .ref-list{display:block}
+  .section,.figure,.table-wrap,.split,.tldr-card,.callout,.step{page-break-inside:avoid}
+  body{font-size:11pt}
+  .sec-head{padding:14px 0}
+  a{color:var(--text);text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- ============ SIDE NAV ============ -->
+  <aside class="sidenav">
+    <div class="nav-brand">ファイル管理戦略</div>
+    <div class="nav-sub">ローカル × クラウド × AI<br>勉強会資料</div>
+    <div class="nav-label">目次</div>
+    <ul class="nav-list" id="navList">
+      <li><a href="#tldr" data-target="tldr">この資料の要点</a></li>
+      <li><a href="#sec1" data-target="sec1">1. ファイル管理の基本</a></li>
+      <li><a href="#sec2" data-target="sec2">2. ローカル & OneDrive</a></li>
+      <li><a href="#sec3" data-target="sec3">3. Google ドライブ</a></li>
+      <li><a href="#sec4" data-target="sec4">4. Gemini × AIによる整理</a></li>
+      <li><a href="#refs-block" data-target="refs-block">引用文献</a></li>
+    </ul>
+  </aside>
+
+  <div class="main">
+    <!-- mobile nav -->
+    <div class="mobile-bar">
+      <select id="mobileNav" aria-label="セクション移動">
+        <option value="tldr">この資料の要点</option>
+        <option value="sec1">1. ファイル管理の基本</option>
+        <option value="sec2">2. ローカル & OneDrive</option>
+        <option value="sec3">3. Google ドライブ</option>
+        <option value="sec4">4. Gemini × AIによる整理</option>
+        <option value="refs-block">引用文献</option>
+      </select>
+    </div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="doc-head">
+      <span class="eyebrow">社内勉強会 — File Management</span>
+      <h1>次世代ファイル管理戦略<br>ローカル・クラウド・AIの統合的アプローチ</h1>
+      <p class="lede">ファイル管理はもはや「どこに保存するか」だけの話ではありません。命名規則という基礎から、OneDrive と Google ドライブの使い分け、そして AI（Gemini）による自動整理まで。「探す時間」を最小化し、蓄積したデータを次の仕事の素材へと変えるための実践的な考え方を整理します。</p>
+      <div class="meta-row">
+        <span class="meta-chip"><strong>対象</strong> 実務担当者</span>
+        <span class="meta-chip"><strong>所要</strong> 約40分</span>
+        <span class="meta-chip"><strong>更新</strong> 2026.06.06</span>
+      </div>
+    </header>
+
+    <!-- ============ TL;DR ============ -->
+    <section class="tldr" id="tldr">
+      <span class="label">TL;DR — 今日の3つの結論</span>
+      <div class="tldr-grid">
+        <div class="tldr-card">
+          <div class="num">01</div>
+          <h3>ファイル名が最強のメタデータ</h3>
+          <p>「開かなくても何のファイルかわかる」状態が最優先。日付は <span class="mono">YYYYMMDD</span>、区切りはハイフン、特殊文字は使わない。これだけで検索性が激変します。</p>
+        </div>
+        <div class="tldr-card">
+          <div class="num">02</div>
+          <h3>OneDrive と Drive は思想が違う</h3>
+          <p>OneDrive は Windows・Office との深い統合が強み。Google ドライブは「検索」と「共同編集」が強み。どちらが自社の働き方に合うかで選びます。</p>
+        </div>
+        <div class="tldr-card">
+          <div class="num">03</div>
+          <h3>「整理する・探す」はAIに委譲</h3>
+          <p>Gemini の<strong>ファイル整理機能</strong>と自然言語検索により、手作業だった分類・検索・要約が自動化。人間は最終承認だけ行えばよくなります。</p>
+        </div>
+        <div class="tldr-card">
+          <div class="num">04</div>
+          <h3>整理から「再利用」のループへ</h3>
+          <p>ゴールは綺麗なフォルダではなく、蓄積データを次の創造的タスクの入力として素早く呼び出せること。これが次世代の「正解」です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 1 ============ -->
+    <section class="section open" id="sec1">
+      <button class="sec-head" aria-expanded="true">
+        <span class="idx">1</span>
+        <h2>ファイル管理の基本 ─ 名前と構造ですべてが決まる</h2>
+        <span class="chev">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>ファイル管理で最も大事なのは「どこに置くか」ではなく、そのファイルが<strong>「何であるか」を自分で説明できる状態</strong>を作ることです。その中核が<strong>命名規則</strong>と<strong>フォルダ構造</strong>の2つです。</p>
+
+        <h3>ファイル名は「開かずにわかる」を最優先に</h3>
+        <p>ファイル名は、中身を開かなくても「何が・いつ・どのバージョンか」を人にもシステムにも伝える、最も基本的なメタデータです。<span class="mono">ドキュメント1</span>・<span class="mono">無題</span>・<span class="mono">会議メモ</span>のような曖昧な名前は、検索のノイズになり生産性を大きく落とすため、徹底的に排除します。</p>
+
+        <div class="split">
+          <div class="split-card do">
+            <span class="label">推奨プラクティス</span>
+            <ul>
+              <li>日付は <span class="mono">YYYYMMDD</span> / <span class="mono">YYYY-MM-DD</span> を先頭へ（自動で時系列順に並ぶ）</li>
+              <li>単語の区切りはハイフン <span class="mono">-</span> またはキャメルケース</li>
+              <li>英数字中心のシンプルな構成</li>
+              <li>バージョンは <span class="mono">v01</span> <span class="mono">v02</span> と連番で</li>
+            </ul>
+          </div>
+          <div class="split-card dont">
+            <span class="label">回避すべきプラクティス</span>
+            <ul>
+              <li><span class="mono">令和5年3月</span> や <span class="mono">03042025</span> のような独自の日付表記</li>
+              <li>スペース・アンダースコア <span class="mono">_</span>（検索や同期の不具合の元）</li>
+              <li><span class="mono">& ! @ # % $ ,</span> や全角スペース</li>
+              <li><span class="mono">最新版・最終版・本当の最後</span> という相対的な語</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr><th>要素</th><th>推奨</th><th>回避</th><th>なぜそうするか</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>日付フォーマット</td>
+                <td class="cell-good">YYYYMMDD / YYYY-MM-DD</td>
+                <td class="cell-bad">MM-DD-YYYY、令和5年3月</td>
+                <td>ISO 8601準拠なら、OSの名前順ソートで自動的に正しい時系列に並ぶ</td>
+              </tr>
+              <tr>
+                <td>単語の区切り</td>
+                <td class="cell-good">ハイフン / キャメルケース</td>
+                <td class="cell-bad">スペース、アンダースコア</td>
+                <td>スペースはURLエンコーディングやシステムエラーの原因。アンダースコアは区切りと認識されないことがある</td>
+              </tr>
+              <tr>
+                <td>禁止文字</td>
+                <td class="cell-good">英数字のみのシンプル構成</td>
+                <td class="cell-bad">& ! @ # % $ , 全角スペース</td>
+                <td>システム移行時や検索インデックスで誤作動を起こす</td>
+              </tr>
+              <tr>
+                <td>バージョン管理</td>
+                <td class="cell-good">v01、v02、v1_1</td>
+                <td class="cell-bad">最新版、最終版、本当の最後</td>
+                <td>「最新」などの相対語は更新のたびに意味を失い、履歴を追えなくなる</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <span class="label">補足 ─ パスの長さに注意</span>
+          <p>フォルダ名＋ファイル名を合わせた「パス全体」には上限（おおむね200〜255文字）があります。超えるとコピーやバックアップが失敗することも。名前は説明的かつ<strong>できるだけ簡潔に</strong>保つのがコツです。</p>
+        </div>
+
+        <h3>フォルダは「浅く広く」最大3階層まで</h3>
+        <p>階層が深すぎると「どこに保存したか忘れる」「パスが長くなりすぎる」という問題が起きます。ベストプラクティスは<strong>最大3階層</strong>。例えば〈年度 → 取引先 → 業務種類〉の組み合わせが多くの業務で機能します。</p>
+
+        <div class="figure">
+          <svg viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="3階層のフォルダ構造の例">
+            <!-- Level labels -->
+            <text x="20" y="34" class="svg-txt" font-size="12" fill="#6b6760">第1階層</text>
+            <text x="250" y="34" class="svg-txt" font-size="12" fill="#6b6760">第2階層</text>
+            <text x="480" y="34" class="svg-txt" font-size="12" fill="#6b6760">第3階層</text>
+            <!-- L1 -->
+            <rect x="20" y="48" width="180" height="44" rx="9" fill="#f4e6e0" stroke="#cc785c"/>
+            <text x="110" y="75" text-anchor="middle" class="svg-txt" font-size="14" fill="#a8573d"><tspan class="svg-num">2026</tspan> 年度</text>
+            <!-- connectors L1 -> L2 -->
+            <path d="M200 70 H225 M225 70 V70 H250 M225 70 V128 H250" fill="none" stroke="#d6d1c4"/>
+            <!-- L2 a -->
+            <rect x="250" y="48" width="180" height="44" rx="9" fill="#ffffff" stroke="#d6d1c4"/>
+            <text x="340" y="75" text-anchor="middle" class="svg-txt" font-size="14" fill="#1a1a1a">A商事</text>
+            <!-- L2 b -->
+            <rect x="250" y="106" width="180" height="44" rx="9" fill="#ffffff" stroke="#d6d1c4"/>
+            <text x="340" y="133" text-anchor="middle" class="svg-txt" font-size="14" fill="#1a1a1a">B工業</text>
+            <!-- connectors L2a -> L3 -->
+            <path d="M430 70 H455 M455 63 V155 M455 63 H480 M455 109 H480 M455 155 H480" fill="none" stroke="#d6d1c4"/>
+            <!-- L3 -->
+            <rect x="480" y="44" width="180" height="38" rx="8" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <text x="570" y="68" text-anchor="middle" class="svg-txt" font-size="13" fill="#1a1a1a">見積書</text>
+            <rect x="480" y="90" width="180" height="38" rx="8" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <text x="570" y="114" text-anchor="middle" class="svg-txt" font-size="13" fill="#1a1a1a">提案書</text>
+            <rect x="480" y="136" width="180" height="38" rx="8" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <text x="570" y="160" text-anchor="middle" class="svg-txt" font-size="13" fill="#1a1a1a">契約書</text>
+            <!-- README note -->
+            <rect x="20" y="210" width="640" height="50" rx="9" fill="#ffffff" stroke="#cc785c" stroke-dasharray="0"/>
+            <text x="40" y="232" class="svg-txt" font-size="13" fill="#a8573d" font-weight="600">README を最上位に</text>
+            <text x="40" y="251" class="svg-txt" font-size="12" fill="#6b6760">命名規則・ナビ方法を文書化しておくと、新メンバーや異動でもルールが属人化しない</text>
+          </svg>
+          <div class="fig-cap">図1 ─ 〈年度 → 取引先 → 業務種類〉の浅く広い3階層構造。ルート直下の README でルールを共有する。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 2 ============ -->
+    <section class="section" id="sec2">
+      <button class="sec-head" aria-expanded="false">
+        <span class="idx">2</span>
+        <h2>ローカル & Microsoft OneDrive</h2>
+        <span class="chev">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>クラウドが標準になっても、ローカルストレージの「速さ」と「オフラインで使える」価値は健在です。一方で、デスクトップやダウンロードフォルダにファイルを放置すると、<strong>故障時のデータ喪失・情報漏洩・バックアップ漏れ</strong>といったリスクを抱え込みます。これを解決しつつクラウドの利便性を得る定番が OneDrive です。</p>
+
+        <h3>OneDrive の強み ─ Windows / Office との一体感</h3>
+        <p>OneDrive 最大の武器は、Windows そのものと Word・Excel・PowerPoint との<strong>深いネイティブ統合</strong>です。クラウドを意識せず、ローカルと同じ操作感で保存・同期・リアルタイム共同編集ができます。</p>
+
+        <h3>ブロックレベル同期 ─ 変わった部分だけ送る</h3>
+        <p>技術的なハイライトが<strong>ブロックレベル同期（差分同期）</strong>です。一般的なクラウドはファイルに少し変更を加えるだけで「ファイル全体」を再アップロードしますが、OneDrive はファイルを小さなブロックに分割し、<strong>変更されたブロックだけ</strong>を同期します。</p>
+
+        <div class="figure">
+          <svg viewBox="0 0 680 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ブロックレベル同期の仕組み">
+            <text x="20" y="28" class="svg-txt" font-size="13" fill="#6b6760" font-weight="600">大容量ファイルを 8 ブロックに分割。1つだけ編集した場合…</text>
+            <!-- file blocks -->
+            <g>
+              <rect x="20" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="98" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="176" y="48" width="70" height="48" rx="7" fill="#f4e6e0" stroke="#cc785c" stroke-width="2"/>
+              <rect x="254" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="332" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="410" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="488" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <rect x="566" y="48" width="70" height="48" rx="7" fill="#f3f1ea" stroke="#e6e2d8"/>
+              <text x="211" y="78" text-anchor="middle" class="svg-num" font-size="15" fill="#a8573d">3</text>
+              <text x="211" y="120" text-anchor="middle" class="svg-txt" font-size="11" fill="#a8573d">変更あり</text>
+            </g>
+            <!-- arrow -->
+            <path d="M211 130 V158" fill="none" stroke="#cc785c" stroke-width="1.5" marker-end="url(#ar)"/>
+            <defs><marker id="ar" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0 0 L8 4 L0 8 Z" fill="#cc785c"/></marker></defs>
+            <!-- upload -->
+            <rect x="176" y="166" width="70" height="44" rx="7" fill="#f4e6e0" stroke="#cc785c" stroke-width="2"/>
+            <text x="211" y="193" text-anchor="middle" class="svg-num" font-size="14" fill="#a8573d">3</text>
+            <text x="280" y="186" class="svg-txt" font-size="13" fill="#1a1a1a" font-weight="600">この1ブロックだけ送信</text>
+            <text x="280" y="205" class="svg-txt" font-size="12" fill="#6b6760">→ 通信量を大幅削減、更新が高速に完了</text>
+          </svg>
+          <div class="fig-cap">図2 ─ 変更されたブロックのみを同期するため、大容量ファイルの更新でもネットワーク負荷が小さい。</div>
+        </div>
+
+        <h3>得意なこと・苦手なこと</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>評価軸</th><th>OneDrive の特性</th></tr></thead>
+            <tbody>
+              <tr><td>プラットフォーム統合</td><td>Windows のエクスプローラー、Microsoft 365（Word/Excel等）との深層的なネイティブ連携</td></tr>
+              <tr><td>同期テクノロジー</td><td>ブロックレベル同期で、大容量ファイルの反復更新でも高速・低負荷</td></tr>
+              <tr><td>検索</td><td>主にファイル名や基本属性（作成者など）に依存。大規模・複雑なフォルダ内の発見には時間がかかることがある</td></tr>
+              <tr><td>容量制限</td><td>1ファイルあたり最大 250GB</td></tr>
+              <tr><td>セキュリティ・復元</td><td>Personal Vault による多層防御、ランサムウェア被害に備えたアカウント単位の完全復元</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warn">
+          <span class="label">弱点 ─ 大規模アセットの検索</span>
+          <p>数千〜数万ファイルの中から「名前うろ覚え・内容の一部だけ覚えている」ものを探す力では、全文検索とコンテキスト理解に強い Google ドライブに分があります。カスタムメタデータ（独自タグ）が付けられない点も大規模組織では制約になります。</p>
+        </div>
+        <p class="muted">結論：ローカル作業が主軸で Office ドキュメント中心のチームには、OneDrive が最も摩擦の少ない基盤。ただし最適解は次章の Google との比較で見極めます。</p>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 3 ============ -->
+    <section class="section" id="sec3">
+      <button class="sec-head" aria-expanded="false">
+        <span class="idx">3</span>
+        <h2>Google ドライブ ─ 検索とコラボの思想</h2>
+        <span class="chev">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>Google ドライブは「クラウドネイティブ」発想で設計され、<strong>シームレスな共同編集</strong>と、Google の中核技術である<strong>強力な検索エンジン</strong>を軸にしたナレッジ基盤です。ここでは権限の仕組み・同期方式・検索術の3点を押さえます。</p>
+
+        <h3>マイドライブ vs 共有ドライブ ─ 違いは「所有権」</h3>
+        <p>見た目は似ていますが、内部の<strong>データの所有権</strong>が根本的に違います。ここを理解しないとガバナンスが崩れます。</p>
+
+        <div class="figure">
+          <svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="マイドライブと共有ドライブの所有権の違い">
+            <!-- My Drive -->
+            <rect x="20" y="30" width="300" height="200" rx="12" fill="#ffffff" stroke="#d6d1c4"/>
+            <text x="40" y="60" class="svg-txt" font-size="15" fill="#1a1a1a" font-weight="600">マイドライブ</text>
+            <text x="40" y="80" class="svg-txt" font-size="12" fill="#6b6760">所有権 = 個人アカウント</text>
+            <circle cx="60" cy="120" r="18" fill="#f4e6e0" stroke="#cc785c"/>
+            <text x="60" y="125" text-anchor="middle" class="svg-txt" font-size="13" fill="#a8573d">個人</text>
+            <rect x="100" y="106" width="80" height="28" rx="6" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <rect x="190" y="106" width="80" height="28" rx="6" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <text x="40" y="175" class="svg-txt" font-size="12" fill="#b45348" font-weight="600">⚠ 退職・アカウント削除で</text>
+            <text x="40" y="194" class="svg-txt" font-size="12" fill="#b45348">　共有ファイルも消失する</text>
+            <text x="40" y="216" class="svg-txt" font-size="11" fill="#6b6760">用途：下書き・個人メモ・一時保管</text>
+            <!-- Shared Drive -->
+            <rect x="360" y="30" width="300" height="200" rx="12" fill="#ffffff" stroke="#cc785c" stroke-width="2"/>
+            <text x="380" y="60" class="svg-txt" font-size="15" fill="#1a1a1a" font-weight="600">共有ドライブ</text>
+            <text x="380" y="80" class="svg-txt" font-size="12" fill="#6b6760">所有権 = チーム / 組織</text>
+            <rect x="378" y="100" width="40" height="34" rx="8" fill="#f4e6e0" stroke="#cc785c"/>
+            <text x="398" y="122" text-anchor="middle" class="svg-txt" font-size="11" fill="#a8573d">組織</text>
+            <rect x="428" y="106" width="70" height="28" rx="6" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <rect x="508" y="106" width="70" height="28" rx="6" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <rect x="588" y="106" width="50" height="28" rx="6" fill="#f3f1ea" stroke="#e6e2d8"/>
+            <text x="380" y="175" class="svg-txt" font-size="12" fill="#3f7a55" font-weight="600">✓ 担当者が変わっても</text>
+            <text x="380" y="194" class="svg-txt" font-size="12" fill="#3f7a55">　データは安全に残り続ける</text>
+            <text x="380" y="216" class="svg-txt" font-size="11" fill="#6b6760">用途：テンプレ・マニュアル・進行中PJ</text>
+          </svg>
+          <div class="fig-cap">図3 ─ 組織の知的財産として残すべきファイルは、初期段階から共有ドライブに置くのが鉄則。</div>
+        </div>
+        <p class="muted">共有ドライブはドライブ全体の単位で5段階のアクセスレベル（閲覧者／コメント可／投稿者／コンテンツ管理者／管理者）を制御でき、ファイルごとの共有設定の煩雑さを排除できます。</p>
+
+        <h3>パソコン版ドライブ ─ ストリーミング or ミラーリング</h3>
+        <div class="split">
+          <div class="split-card">
+            <span class="label" style="color:var(--accent-deep)">ストリーミング</span>
+            <ul style="list-style:none">
+              <li style="padding-left:0">実データはローカルに置かず、開いた瞬間にクラウドから取得</li>
+              <li style="padding-left:0;margin-top:8px"><span class="cell-good">◎</span> ローカル容量をほぼ消費しない（数TBの共有ドライブにもアクセス可）</li>
+              <li style="padding-left:0;margin-top:8px"><span class="cell-bad">△</span> 基本オンライン前提。必要なものは「オフラインで使用可能に」でキャッシュ</li>
+            </ul>
+          </div>
+          <div class="split-card">
+            <span class="label" style="color:var(--accent-deep)">ミラーリング</span>
+            <ul style="list-style:none">
+              <li style="padding-left:0">同じ実データをローカルにも複製し、常時同期</li>
+              <li style="padding-left:0;margin-top:8px"><span class="cell-good">◎</span> 完全オフラインでも全ファイルに即アクセス、読み書きも高速</li>
+              <li style="padding-left:0;margin-top:8px"><span class="cell-bad">△</span> 同期対象と同じ容量がローカルに必要。空き不足の端末では選べない</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>検索演算子を使いこなす ─ 「探す」を最速に</h3>
+        <p>ドライブの真価は、フォルダを目視で辿る「ブラウジング」から、検索で直接引き出す「検索前提の整理」へ発想を変えたときに出ます。以下の演算子を組み合わせて検索の網を絞り込みます。</p>
+
+        <div class="op-grid">
+          <div class="op-card">
+            <code>type:</code>
+            <p>ファイル形式で絞る。<span class="mono">type:spreadsheet</span> や <span class="mono">type:pdf</span> で無関係な形式を即除外。document / presentation / pdf / image / video などに対応。</p>
+          </div>
+          <div class="op-card">
+            <code>owner:</code>
+            <p>作成者・所有者で絞る。<span class="mono">owner:tanaka@example.com</span> でその人のファイルだけに限定。</p>
+          </div>
+          <div class="op-card">
+            <code>to:</code>
+            <p>自分が特定の人へ共有したファイルを探す。メール検索のような直感的なロジック。</p>
+          </div>
+          <div class="op-card">
+            <code>from:</code>
+            <p>特定の人から自分へ共有されたファイルを探す。<span class="mono">to:</span> と対の関係。</p>
+          </div>
+        </div>
+        <div class="callout">
+          <span class="label">合わせ技の例</span>
+          <p>「昨年、田中氏が作ったPDFの契約書」なら <span class="mono">type:pdf owner:tanaka@example.com 契約書</span> のように重ねる。さらに「変更日」を指定すれば古いドラフトの混入も防げます。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4 ============ -->
+    <section class="section" id="sec4">
+      <button class="sec-head" aria-expanded="false">
+        <span class="idx">4</span>
+        <h2>Gemini × AIによる整理の変革</h2>
+        <span class="chev">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>ファイル管理史上の最大の転換が、生成AIのクラウド統合です。Google Workspace に組み込まれた <strong>Gemini</strong> は、これまで人間が時間と神経をすり減らして手作業でやっていた「整理・分類・検索・要約」を自動化します。</p>
+
+        <h3>ファイルを整理する <span class="badge ga">2026年6月 GA</span></h3>
+        <p>マイドライブ直下に散らかったドキュメント・スクショ・PDF・ダウンロード。この「デジタルの負債」を一掃するのが <strong>「ファイルを整理する（Organize My Files / Suggest File Moves）」</strong>機能です。単なる拡張子・日付ソートではなく、AI がファイルの<strong>中身（文脈）・既存のフォルダ構造・命名規則・整理パターン</strong>を総合的に読み取り、パーソナライズされた整理案を提案します。</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="dot"></div>
+            <div class="step-body">
+              <h4>「ファイルを整理する」ボタンを押す</h4>
+              <p>マイドライブや特定フォルダを開くと専用ボタンが出現。クリックで分析が走る。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot"></div>
+            <div class="step-body">
+              <h4>2種類の提案が提示される</h4>
+              <p>① 既存フォルダへの移動提案、② 関連ファイルをまとめた新規フォルダの自動生成＋スマートな命名。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot"></div>
+            <div class="step-body">
+              <h4>人間がレビュー（Human in the Loop）</h4>
+              <p>AIは勝手に動かさない。ダッシュボードで内容プレビューを確認し、外したいファイルはチェックを外す、新フォルダ名はその場で編集できる。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot"></div>
+            <div class="step-body">
+              <h4>自然言語で粒度を調整（Refine）</h4>
+              <p>「年ごとにまとめて」「新規フォルダは少なめに」と指示して結果を微調整。拒否した組み合わせは30日間再提案されない学習機能つき。</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="dot"></div>
+            <div class="step-body">
+              <h4>承認して実行</h4>
+              <p>最終承認ボタンを押して初めて移動が走る。</p>
+            </div>
+          </div>
+        </div>
+        <p class="muted">Business / Enterprise（Standard・Plus）、教育機関の AI Pro、個人の Google AI Pro / Ultra で展開。2026年7月15日までは利用上限が緩和されたプロモーション中。</p>
+
+        <h3>サイドパネル ─ 探す・理解する・作る</h3>
+        <p>整理だけでなく、Drive・Gmail・Docs・Sheets・Slides の右側に常駐する<strong>サイドパネル</strong>が「中身を探し、理解し、活用する」を一変させます。</p>
+        <ul class="decisions">
+          <li><strong>自然言語検索：</strong>「先月の営業会議の議事録で予算に触れている部分」のように、人に頼むような言い方で横断検索できる。</li>
+          <li><strong>要約（Summarization）：</strong>長いPDFやフォルダ全体を、開かずに要点だけ抽出。ホームの「おすすめファイル」で <span class="mono">See more</span>、モバイルでは <span class="mono">要約する</span> から即プレビュー。</li>
+          <li><strong>コンテンツ生成：</strong>既存ファイルA・Bを下敷きに新しい下書きを作成。「フォーマットを合わせる」「執筆スタイルを合わせる」で過去の良い資料のトーンを踏襲できる。</li>
+        </ul>
+
+        <h3>RAG ─ なぜ実務で信頼できるのか</h3>
+        <p>これらは <strong>RAG（検索拡張生成）</strong>という、AIが外部データを参照して回答する技術で実装されています。実務で信頼できる理由は、<strong>参照するデータの範囲をユーザーが厳密に制御できる</strong>点にあります。</p>
+        <div class="split">
+          <div class="split-card do">
+            <span class="label">フォーカスの制御</span>
+            <ul>
+              <li><span class="mono">@</span> で特定ファイル・フォルダを指定</li>
+              <li>「+ Add sources」で分析対象を明示選択</li>
+              <li>チェックを外すだけで一時的に対象から除外</li>
+            </ul>
+          </div>
+          <div class="split-card do">
+            <span class="label">ハルシネーション対策</span>
+            <ul>
+              <li>回答に<strong>引用元（Citations）</strong>を明示</li>
+              <li>引用番号をタップ → 元ファイルへ直接ジャンプ</li>
+              <li>人の目で即座にファクトチェックできる</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout">
+          <span class="label">この章の結論</span>
+          <p>ファイル管理はもはや「保存場所の設計」という静的な作業ではなく、<strong>蓄積データをいかに素早く文脈化し、次の創造的タスクの入力として再利用するか</strong>という動的なナレッジエコシステムへと変わりました。ローカルの速度・クラウドの堅牢性・AIによる認知負荷の解放を統合的に設計することが、次世代の「正解」です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ REFERENCES ============ -->
+    <div id="refs-block" style="scroll-margin-top:24px;margin-top:36px">
+      <details class="refs">
+        <summary>引用文献（30件）<span class="chev">▾</span></summary>
+        <ol class="ref-list">
+          <li>仕事が速い人の「フォルダ・ファイル命名規則」完全版｜さとる — note <a href="https://note.com/nantoka_kaishain/n/n9467b79e8d89">link</a></li>
+          <li>File Naming Organization Best Practices — Oregon Secretary of State</li>
+          <li>File naming and folder structure — CESSDA Data Management Expert Guide</li>
+          <li>Recommendations on File/Folder Naming Conventions — University of Washington</li>
+          <li>File Naming Conventions — Harvard Biomedical Data Management</li>
+          <li>Folder and File Naming Convention – 10 Rules for Best Practice — Reddit r/datacurator</li>
+          <li>【図解付き】フォルダ管理で業務を効率化 — Box</li>
+          <li>I Tested OneDrive vs. Google Drive: Here's the Winner — G2 Learn Hub</li>
+          <li>OneDrive vs. Google Drive: Which is best? — Zapier</li>
+          <li>Microsoft OneDrive vs. Google Drive: Comparison features — CloudMounter</li>
+          <li>Microsoft OneDrive vs Google Drive vs Digital Asset Management — Miller Graphics</li>
+          <li>Google Workspaceの共有ドライブとは？ — 合同会社橋爪オフィス</li>
+          <li>新しくなった「パソコン版Googleドライブ」の使い方を徹底解説 — 価格.comマガジン</li>
+          <li>大量のファイルを扱う人のための高度な検索演算子一覧 — STYLE MAP</li>
+          <li>Googleドライブ検索の基本テクニックと効率化のコツ — XIMIX</li>
+          <li>Google Drive's "Organize My Files" Feature Is Here — Gemini Insider</li>
+          <li>Google Workspace with Gemini Documentation — Google</li>
+          <li>I tried Google Drive's new AI cleanup tool — ZDNet</li>
+          <li>Google Workspace officially launches Gemini-powered file organization — Chrome Unboxed</li>
+          <li>Let Gemini organize your files — Google Drive Help</li>
+          <li>Let Gemini organise your files — Google Drive Help (en-AE)</li>
+          <li>Gemini にファイルを整理してもらう — Google ドライブ ヘルプ</li>
+          <li>Use the side panel to collaborate with Gemini — Google Workspace Learning Center</li>
+          <li>New, powerful ways to get more done with Gemini for Google Workspace — Google</li>
+          <li>Gemini でドライブ内のファイルを検索して取得する — Google ヘルプ</li>
+          <li>Gemini in Google Drive — Google Workspace</li>
+          <li>Get updates & summaries on your files with Gemini in Drive — Google Help</li>
+          <li>See file summaries on the Home page in Google Drive — Workspace Updates</li>
+          <li>Use Gemini in Drive for research & analysis — Google Help</li>
+          <li>New ways to create faster with Gemini in Docs, Sheets, Slides and Drive — Google Blog</li>
+        </ol>
+      </details>
+    </div>
+
+    <footer class="foot">
+      <strong>次世代ファイル管理戦略</strong> — 社内勉強会資料 / 2026.06.06<br>
+      ローカル・クラウド・AIを統合し、「探す時間」を最小化するために。
+    </footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ----- accordion -----
+  document.querySelectorAll('.sec-head').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var sec=btn.closest('.section');
+      var open=sec.classList.toggle('open');
+      btn.setAttribute('aria-expanded',open?'true':'false');
+    });
+  });
+
+  // ----- scrollspy -----
+  var links=Array.prototype.slice.call(document.querySelectorAll('#navList a'));
+  var map={};
+  links.forEach(function(a){map[a.dataset.target]=a;});
+  var targets=Object.keys(map).map(function(id){return document.getElementById(id);}).filter(Boolean);
+
+  function spy(){
+    var pos=window.scrollY+140;
+    var current=null;
+    targets.forEach(function(t){ if(t.offsetTop<=pos) current=t.id; });
+    links.forEach(function(a){a.classList.remove('active');});
+    if(current&&map[current]) map[current].classList.add('active');
+  }
+  window.addEventListener('scroll',spy,{passive:true});
+  spy();
+
+  // ----- nav click: open target section -----
+  links.forEach(function(a){
+    a.addEventListener('click',function(){
+      var sec=document.getElementById(a.dataset.target);
+      if(sec&&sec.classList.contains('section')&&!sec.classList.contains('open')){
+        sec.classList.add('open');
+        sec.querySelector('.sec-head').setAttribute('aria-expanded','true');
+      }
+    });
+  });
+
+  // ----- mobile nav -----
+  var mob=document.getElementById('mobileNav');
+  if(mob){
+    mob.addEventListener('change',function(){
+      var sec=document.getElementById(mob.value);
+      if(sec){
+        if(sec.classList.contains('section')&&!sec.classList.contains('open')){
+          sec.classList.add('open');
+          sec.querySelector('.sec-head').setAttribute('aria-expanded','true');
+        }
+        sec.scrollIntoView({behavior:'smooth'});
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
